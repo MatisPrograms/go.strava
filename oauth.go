@@ -31,23 +31,29 @@ var Permissions = struct {
 	ViewPrivate      Permission
 	Write            Permission
 	WriteViewPrivate Permission
+	All              Permission
 }{
 	"public",
 	"view_private",
 	"write",
 	"write,view_private",
+	"read,read_all,profile:read_all,profile:write,activity:read,activity:read_all,activity:write",
 }
 
 // AuthorizationResponse is returned as a result of the token exchange
 type AuthorizationResponse struct {
-	AccessToken string          `json:"access_token"`
-	State       string          `json:"State"`
-	Athlete     AthleteDetailed `json:"athlete"`
+	AccessToken  string         `json:"access_token"`
+	RefreshToken string         `json:"refresh_token"`
+	ExpiresAt    int64          `json:"expires_at"`
+	ExpiresIn    int64          `json:"expires_in"`
+	Athlete      AthleteSummary `json:"athlete"`
+	State        string         `json:"State"`
 }
 
 // CallbackPath returns the path portion of the CallbackURL.
 // Useful when setting a http path handler, for example:
-//		http.HandleFunc(stravaOAuth.CallbackURL(), stravaOAuth.HandlerFunc(successCallback, failureCallback))
+//
+//	http.HandleFunc(stravaOAuth.CallbackURL(), stravaOAuth.HandlerFunc(successCallback, failureCallback))
 func (auth OAuthAuthenticator) CallbackPath() (string, error) {
 	if auth.CallbackURL == "" {
 		return "", errors.New("callbackURL is empty")
@@ -164,6 +170,20 @@ func (auth OAuthAuthenticator) AuthorizationURL(state string, scope Permission, 
 	}
 
 	return path
+}
+
+// AuthorizationURL returns the url of the authorization endpoint.
+func AuthorizationURL(callbackURL string, scope Permission) (string, error) {
+	if ClientId == 0 || ClientId < 0 {
+		return "", errors.New("clientId is empty")
+	}
+	if callbackURL == "" {
+		return "", errors.New("callbackURL is empty")
+	}
+	if scope == "" {
+		return "", errors.New("scope is empty")
+	}
+	return fmt.Sprintf("%s/oauth/authorize?client_id=%d&response_type=code&redirect_uri=%s&scope=%v", basePath, ClientId, callbackURL, scope), nil
 }
 
 /*********************************************************/
