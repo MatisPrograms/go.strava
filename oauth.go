@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -50,6 +51,19 @@ type AuthorizationResponse struct {
 	State        string         `json:"State"`
 }
 
+// StravaError represents an error response from the Strava API.
+type StravaError struct {
+	Code     string `json:"code"`
+	Field    string `json:"field"`
+	Resource string `json:"resource"`
+}
+
+// StravaErrorResponse represents an error response from the Strava API.
+type StravaErrorResponse struct {
+	Errors  []StravaError `json:"errors"`
+	Message string        `json:"message"`
+}
+
 // CallbackPath returns the path portion of the CallbackURL.
 // Useful when setting a http path handler, for example:
 //
@@ -63,6 +77,42 @@ func (auth OAuthAuthenticator) CallbackPath() (string, error) {
 		return "", err
 	}
 	return url.Path, nil
+}
+
+// ExchangeToken handles the common logic for token exchange with the Strava API
+func ExchangeToken(values url.Values) (*AuthorizationResponse, *http.Response, error) {
+	// Append client_id and client_secret to the request
+	values.Set("client_id", fmt.Sprintf("%d", ClientId))
+	values.Set("client_secret", ClientSecret)
+
+	// Send the request to the Strava API
+	resp, err := http.DefaultClient.PostForm(basePath+"/oauth/token", values)
+
+	// this was a poor request, maybe strava servers down?
+	if err != nil {
+		return nil, resp, err
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	contents, _ := io.ReadAll(resp.Body)
+
+	// if status code is not 200, then something went wrong
+	if resp.StatusCode/100 != 2 {
+		var stravaErr StravaErrorResponse
+		json.Unmarshal(contents, &stravaErr)
+		return nil, resp, errors.New("Strava API error")
+	}
+
+	// Parse the response body
+	var response AuthorizationResponse
+	err = json.Unmarshal(contents, &response)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	// Return the data, response, and error
+	return &response, resp, nil
 }
 
 // Authorize performs the second part of the OAuth exchange. The client has already been redirected to the
