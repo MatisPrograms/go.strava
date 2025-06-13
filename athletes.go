@@ -49,17 +49,20 @@ type AthleteStats struct {
 	BiggestClimbElevationGain float64       `json:"biggest_climb_elevation_gain"`
 	RecentRideTotals          AthleteTotals `json:"recent_ride_totals"`
 	RecentRunTotals           AthleteTotals `json:"recent_run_totals"`
+	RecentSwimTotals          AthleteTotals `json:"recent_swim_totals"`
 	YTDRideTotals             AthleteTotals `json:"ytd_ride_totals"`
 	YTDRunTotals              AthleteTotals `json:"ytd_run_totals"`
+	YTDSwimTotals             AthleteTotals `json:"ytd_swim_totals"`
 	AllRideTotals             AthleteTotals `json:"all_ride_totals"`
 	AllRunTotals              AthleteTotals `json:"all_run_totals"`
+	AllSwimTotals             AthleteTotals `json:"all_swim_totals"`
 }
 
 type AthleteTotals struct {
 	Count         int     `json:"count"`
 	Distance      float64 `json:"distance"`
-	MovingTime    int     `json:"moving_time"`
-	ElapsedTime   int     `json:"elapsed_time"`
+	MovingTime    float64 `json:"moving_time"`
+	ElapsedTime   float64 `json:"elapsed_time"`
 	ElevationGain float64 `json:"elevation_gain"`
 
 	// only correct for recent totals, not ytd or all
